@@ -1,15 +1,15 @@
-name: Bergecraft
+name: BergeyPvp
 version: 0.1
 author: valadian
-main: com.valadian.bergecraft.Bergecraft
+main: com.valadian.bergecraft.BergeyPvp
 depends: [GimmickAPI]
 dev-url: null
 commands:
-  bergecraft:
-    description: Gets and sets Bergecraft settings
-    usage: /bergecraft <setting> [<value>]
-    permission: bergecraft.console
+  bergeypvp:
+    description: Gets and sets BergeyPvp settings
+    usage: /bergeypvp <setting> [<value>]
+    permission: bergeypvp.console
 permissions:
-  bergecraft.console:
+  bergeypvp.console:
     description: Console commands for Bergecraft
     default: false

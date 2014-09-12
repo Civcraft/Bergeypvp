@@ -28,14 +28,15 @@ import com.valadian.bergecraft.annotations.*;
 import com.valadian.bergecraft.bergeypvp.WeaponTimer;
 import com.valadian.bergecraft.interfaces.ApiManager;
 import com.valadian.bergecraft.interfaces.CompatGimmickApi;
-
 import com.gimmicknetwork.gimmickapi.PlayerLeavePvpModeEvent;
 import com.gimmicknetwork.gimmickapi.PlayerJoinPvpModeEvent;
 
 public class BergeyPvp extends ABergMod  {
-	protected static String pluginName = "BergeyPVP";
-
-    protected static final Logger log_ = Logger.getLogger(pluginName);
+	@Override
+	protected String getPluginName() {
+        return "BergeyPVP";
+    }
+    protected final Logger log_ = Logger.getLogger(getPluginName());
     public BergeyPvp() {
     	apis = new ApiManager();
     }
@@ -44,8 +45,9 @@ public class BergeyPvp extends ABergMod  {
     	@Bergification(opt="gimmick_api_enabled", def="true"),
     	@Bergification(opt="gimmick_api_pvpmode", def="bergecraft")
     })
-    protected void loadApis() {
-    	apis.disablerApis.add(new CompatGimmickApi());
+    @Override
+    public void loadApis() {
+    	apis.disablerApis.add(new CompatGimmickApi(this));
     }
 
     HashMap<Player,WeaponTimer> cooldowns = new HashMap<Player,WeaponTimer>();
@@ -365,4 +367,9 @@ public class BergeyPvp extends ABergMod  {
         	event.getPlayer().sendMessage("Ender pearls are disabled in Bergecraft PVP mode.");
         }
     }
+//    @Override
+//    public void onLoad()
+//    {
+//    	super.onLoad();
+//    }
 }
