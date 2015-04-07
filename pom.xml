@@ -10,13 +10,14 @@
   <name>BergeyPvP</name>
   <url>https://github.com/Civcraft/Bergeypvp</url>
   
-  <build>
-
-    <properties>
-      <maven.compiler.source>1.7</maven.compiler.source>
-      <maven.compiler.target>1.7</maven.compiler.target>
-    </properties>
+  <properties>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <build.number>SNAPSHOT</build.number>
+  </properties>
     
+  <build>
     <sourceDirectory>${basedir}/src</sourceDirectory>
     
     <resources>
@@ -34,7 +35,7 @@
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>bukkit</artifactId>
-      <version>1.7.10-R0.1</version>
+      <version>1.7.2-R0.3</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
