@@ -39,12 +39,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.gimmicknetwork</groupId>
-      <artifactId>GimmickAPI</artifactId>
-      <version>0.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.valadian.bergecraft</groupId>
       <artifactId>BergModCore</artifactId>
       <version>0.1</version>

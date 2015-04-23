@@ -27,10 +27,6 @@ import org.bukkit.potion.PotionEffectType;
 import com.valadian.bergecraft.annotations.*;
 import com.valadian.bergecraft.bergeypvp.WeaponTimer;
 import com.valadian.bergecraft.interfaces.ApiManager;
-import com.valadian.bergecraft.interfaces.CompatGimmickApi;
-import com.gimmicknetwork.gimmickapi.PlayerLeavePvpModeEvent;
-import com.gimmicknetwork.gimmickapi.PlayerJoinPvpModeEvent;
-
 public class BergeyPvp extends ABergMod  {
 	@Override
 	protected String getPluginName() {
@@ -41,44 +37,7 @@ public class BergeyPvp extends ABergMod  {
     	apis = new ApiManager();
     }
 
-    @Bergifications ({
-    	@Bergification(opt="gimmick_api_enabled", def="true"),
-    	@Bergification(opt="gimmick_api_pvpmode", def="bergecraft")
-    })
-    @Override
-    public void loadApis() {
-    	apis.disablerApis.add(new CompatGimmickApi(this));
-    }
-
     HashMap<Player,WeaponTimer> cooldowns = new HashMap<Player,WeaponTimer>();
-
-    //handle players changing pvp mode FROM bergecraft
-
-    @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerLeavePvpMode(PlayerLeavePvpModeEvent event) {
-    	Player player = event.getPlayer();
-    	String oldMode = event.getOldPvpMode();
-    	String newMode = event.getNewPvpMode();
-    	//player switched from bergecraft
-    	if (oldMode.equals("bergecraft") && !newMode.equals("bergecraft")) {
-    		resetMaxHealth(player);
-    		getLogger().info(player.getName()+" has left bergecraft mode, their max health has been reset.");
-    	}
-    }
-    
-        
-    //handle players changing pvp mode TO bergecraft
-    @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerJoinPvpMode(PlayerJoinPvpModeEvent event) {
-    	Player player = event.getPlayer();
-    	String oldMode = event.getOldPvpMode();
-    	String newMode = event.getNewPvpMode();
-    	//player switched from bergecraft
-    	if (newMode.equals("bergecraft") && !oldMode.equals("bergecraft")) {
-    		setMaxHealth(player);
-    		getLogger().info(player.getName()+" has joined bergecraft mode, their max health has been set.");
-    	}
-    }
     
     @Bergifications ({
 	    @Bergification(opt="bergey_pvp_weapons", def="true"),
