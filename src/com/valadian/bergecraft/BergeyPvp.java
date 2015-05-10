@@ -75,10 +75,10 @@ public class BergeyPvp extends JavaPlugin implements Listener, NameConfigListene
         		}
     	    	else
     	    	{
-        	    	log_.log(Level.INFO, "Scheduling Cooldown!");
-        			WeaponTimer timer = new WeaponTimer(attacker, stack, now, cooldown);
-        			timer.runTaskTimer(this, 0, 20/5);
-        			cooldowns.put(attacker, timer);
+        	    	//log_.log(Level.INFO, "Scheduling Cooldown!");
+        			//WeaponTimer timer = new WeaponTimer(attacker, stack, now, cooldown);
+        			//timer.runTaskTimer(this, 0, 20/5);
+        			//cooldowns.put(attacker, timer);
         			//Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, new WeaponTimer(attacker, stack, now, cooldown), 0, 20/5);
     	    	}
         	}
