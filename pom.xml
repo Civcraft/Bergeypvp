@@ -39,9 +39,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.valadian.bergecraft</groupId>
-      <artifactId>BergModCore</artifactId>
-      <version>0.1</version>
+      <groupId>vg.civcraft.mc.namelayer</groupId>
+      <artifactId>NameLayer</artifactId>
+      <version>2.3.4-117</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

@@ -2,6 +2,7 @@ package com.valadian.bergecraft;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Material;
@@ -12,6 +13,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -21,44 +23,49 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import com.valadian.bergecraft.annotations.*;
+import vg.civcraft.mc.namelayer.NameAPI;
+import vg.civcraft.mc.namelayer.config.NameConfigListener;
+import vg.civcraft.mc.namelayer.config.NameConfigManager;
+import vg.civcraft.mc.namelayer.config.annotations.NameConfig;
+import vg.civcraft.mc.namelayer.config.annotations.NameConfigs;
+import vg.civcraft.mc.namelayer.config.annotations.NameConfigType;
+
 import com.valadian.bergecraft.bergeypvp.WeaponTimer;
-import com.valadian.bergecraft.interfaces.ApiManager;
-public class BergeyPvp extends ABergMod  {
-	@Override
-	protected String getPluginName() {
-        return "BergeyPVP";
-    }
-    protected final Logger log_ = Logger.getLogger(getPluginName());
-    public BergeyPvp() {
-    	apis = new ApiManager();
-    }
+public class BergeyPvp extends JavaPlugin implements Listener, NameConfigListener{
+
+	private NameConfigManager config_;
+    protected final Logger log_ = getLogger();
+	public void onEnable(){
+		getServer().getPluginManager().registerEvents(this, this);
+		config_ = NameAPI.getNameConfigManager();
+		config_.registerListener(this, this);
+	}
 
     HashMap<Player,WeaponTimer> cooldowns = new HashMap<Player,WeaponTimer>();
     
-    @Bergifications ({
-	    @Bergification(opt="bergey_pvp_weapons", def="true"),
-	    @Bergification(opt="bergey_pvp_weapon_cooldown", def="3000",type=OptType.Int),
-    	@Bergification(opt="nerf_sharpness", def="true"),
-    	@Bergification(opt="sharpness_damage_per_level", type=OptType.Double, def="0.66"),
-    	@Bergification(opt="nerf_strength", def="true"),
-    	@Bergification(opt="strength_multiplier", type=OptType.Double, def="1.5")
+    @NameConfigs({
+	    @NameConfig(name="bergey_pvp_weapons", def="true", type = NameConfigType.Bool),
+	    @NameConfig(name="bergey_pvp_weapon_cooldown", def="3000",type=NameConfigType.Int),
+	    @NameConfig(name="nerf_sharpness", def="true", type = NameConfigType.Bool),
+	    @NameConfig(name="sharpness_damage_per_level", type=NameConfigType.Double, def="0.66"),
+	    @NameConfig(name="nerf_strength", def="true", type = NameConfigType.Bool),
+    	@NameConfig(name="strength_multiplier", type=NameConfigType.Double, def="1.5")
     })
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
     	if(event.getDamager() instanceof Player)
     	{
         	Player attacker = (Player) event.getDamager();
-        	if(apis.isBergecraftDisabledFor(attacker)) return;
         	ItemStack stack = attacker.getItemInHand();
         	stack.getDurability();
         	long now = System.currentTimeMillis();
-    		if(config_.get("bergey_pvp_weapons").getBool())
+    		if(config_.get(this, "bergey_pvp_weapons").getBool())
     		{
-        		int cooldown = config_.get("bergey_pvp_weapon_cooldown").getInt();
+        		int cooldown = config_.get(this, "bergey_pvp_weapon_cooldown").getInt();
     	    	if(cooldowns.containsKey(attacker) && !cooldowns.get(attacker).cancelled)
     	    	{
     				event.setCancelled(true);
@@ -68,7 +75,7 @@ public class BergeyPvp extends ABergMod  {
         		}
     	    	else
     	    	{
-        	    	debug("Scheduling Cooldown!");
+        	    	log_.log(Level.INFO, "Scheduling Cooldown!");
         			WeaponTimer timer = new WeaponTimer(attacker, stack, now, cooldown);
         			timer.runTaskTimer(this, 0, 20/5);
         			cooldowns.put(attacker, timer);
@@ -76,14 +83,14 @@ public class BergeyPvp extends ABergMod  {
     	    	}
         	}
 
-            if (config_.get("nerf_sharpness").getBool()) {
+            if (config_.get(this, "nerf_sharpness").getBool()) {
                 if (!(event.getDamager() instanceof Player)) {
                     return;
                   }
                   Player player = (Player)event.getDamager();
                   ItemStack item = player.getItemInHand();
                   //Apply Strength Nerf
-                  final double strengthMultiplier = config_.get("strength_multiplier").getDouble();
+                  final double strengthMultiplier = config_.get(this, "strength_multiplier").getDouble();
                   if (player.hasPotionEffect(PotionEffectType.INCREASE_DAMAGE)) {
                     for (PotionEffect effect : player.getActivePotionEffects()) {
                       if (effect.getType().equals(PotionEffectType.INCREASE_DAMAGE)) {
@@ -97,27 +104,27 @@ public class BergeyPvp extends ABergMod  {
                   }
                   //Apply Sharp Nerf
                   int sharpness = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
-                  final double sharpnessOffset = config_.get("sharpness_damage_per_level").getDouble();
+                  final double sharpnessOffset = config_.get(this, "sharpness_damage_per_level").getDouble();
                   if(sharpness>0){
 	                  //final double unbuffedDamage = event.getDamage() / potionScale;
 	                  final double newDamage = event.getDamage() - 1.25 * sharpness + sharpnessOffset * sharpness;
 	                  //final double newDamage = fixedUnbuffedDamage * potionScale;
-	          		  debug("Reducing Sharpness damage from: "+event.getDamage()+" to: "+newDamage);
+	          		  log_.log(Level.INFO, "Reducing Sharpness damage from: "+event.getDamage()+" to: "+newDamage);
 	                  event.setDamage(newDamage);
                   }
             }
     	}
     }
-    @Bergifications ({
-    	@Bergification(opt="bergey_armor", def="true"),
-    	@Bergification(opt="bergey_armor_50_perc_mit", def="10",type=OptType.Int),
-    	@Bergification(opt="bergey_prot", def="true"),
-    	@Bergification(opt="bergey_prot_50_perc_mit", def="7",type=OptType.Int),
-    	@Bergification(opt="bergey_prot_scale", def="0.33",type=OptType.Double),
+    @NameConfigs ({
+    	@NameConfig(name="bergey_armor", def="true", type = NameConfigType.Bool),
+    	@NameConfig(name="bergey_armor_50_perc_mit", def="10",type=NameConfigType.Int),
+    	@NameConfig(name="bergey_prot", def="true", type = NameConfigType.Bool),
+    	@NameConfig(name="bergey_prot_50_perc_mit", def="7",type=NameConfigType.Int),
+    	@NameConfig(name="bergey_prot_scale", def="0.33",type=NameConfigType.Double),
     })
     @EventHandler(priority = EventPriority.LOWEST) // ignoreCancelled=false
     public void onPlayerTakeDamage(EntityDamageEvent event) {
-      if (!config_.get("bergey_armor").getBool()) {
+      if (!config_.get(this, "bergey_armor").getBool()) {
           return;
       }
       double damage = event.getDamage();
@@ -137,8 +144,6 @@ public class BergeyPvp extends ABergMod  {
         return;
       }
       Player defender = (Player)entity;
-
-  	  if(apis.isBergecraftDisabledFor(defender)) return;
   	  
       double defense = getDefense(defender);
       double epf = getAverageEPF(defender);
@@ -153,22 +158,22 @@ public class BergeyPvp extends ABergMod  {
       
       double originalDamage = damage / vanilla_damage_taken_ratio;
       
-      double bergey_reduction = defense / (defense + config_.get("bergey_armor_50_perc_mit").getInt());
+      double bergey_reduction = defense / (defense + config_.get(this, "bergey_armor_50_perc_mit").getInt());
       double bergey_prot_reduction = 0;
       if(factorProt){
-    	  bergey_prot_reduction = bergey_epf / (bergey_epf + config_.get("bergey_prot_50_perc_mit").getInt()) * config_.get("bergey_prot_scale").getDouble();
+    	  bergey_prot_reduction = bergey_epf / (bergey_epf + config_.get(this, "bergey_prot_50_perc_mit").getInt()) * config_.get(this, "bergey_prot_scale").getDouble();
       }
       double bergey_damage_taken_ratio = (1 - bergey_reduction) * (1 - bergey_prot_reduction);
       
       double newDamage = originalDamage * bergey_damage_taken_ratio;
       DecimalFormat df = new DecimalFormat("#.##");
       if(factorProt) {
-	      debug(     "[Vanilla] Armor: "+df.format(vanilla_reduction)+", Enchant: "+df.format(vanilla_protection_reduction)+"\n"+
+	      log_.log(Level.INFO, "[Vanilla] Armor: "+df.format(vanilla_reduction)+", Enchant: "+df.format(vanilla_protection_reduction)+"\n"+
 	"                              [Bergey ] Armor: "+df.format(bergey_reduction)+", Enchant: "+df.format(bergey_prot_reduction)+"\n"+
 	"                                        Damage Before: "+df.format(damage)+ " Damage After: "+df.format(newDamage));
       }
       else {
-    	  debug(     "[Vanilla] Armor: "+df.format(vanilla_reduction)+", \n"+
+    	  log_.log(Level.INFO, "[Vanilla] Armor: "+df.format(vanilla_reduction)+", \n"+
     "                              [Bergey ] Armor: "+df.format(bergey_reduction)+"\n"+
 	"                                        Damage Before: "+df.format(damage)+ " Damage After: "+df.format(newDamage));
       }
@@ -272,29 +277,28 @@ public class BergeyPvp extends ABergMod  {
     	}
     }
 
-    @Bergifications ({
-    	@Bergification(opt="bergey_health", def="true"),
-    	@Bergification(opt="bergey_base_health", def="20.0",type=OptType.Double),
-    	@Bergification(opt="bergey_max_bonus_health", def="20.0",type=OptType.Double),
-    	@Bergification(opt="bergey_health_bonus_50_perc_durability", def="850",type=OptType.Double)
+    @NameConfigs ({
+    	@NameConfig(name="bergey_health", def="true", type = NameConfigType.Bool),
+    	@NameConfig(name="bergey_base_health", def="20.0",type=NameConfigType.Double),
+    	@NameConfig(name="bergey_max_bonus_health", def="20.0",type=NameConfigType.Double),
+    	@NameConfig(name="bergey_health_bonus_50_perc_durability", def="850",type=NameConfigType.Double)
     })
 	public void setMaxHealth(Player player){
 
-    	if(apis.isBergecraftDisabledFor(player)) return;
-        if (!config_.get("bergey_health").getBool()) {
+        if (!config_.get(this, "bergey_health").getBool()) {
           return;
         }
-		double maxHealth = config_.get("bergey_base_health").getDouble();
+		double maxHealth = config_.get(this, "bergey_base_health").getDouble();
 		
 		double durability = 0;
  	    for (ItemStack armor : player.getInventory().getArmorContents()) {
  	    	durability += armor.getType().getMaxDurability();
  	    }
  	    
- 	   maxHealth += config_.get("bergey_max_bonus_health").getDouble() *
- 	    		durability / (durability + config_.get("bergey_health_bonus_50_perc_durability").getDouble());
+ 	   maxHealth += config_.get(this, "bergey_max_bonus_health").getDouble() *
+ 	    		durability / (durability + config_.get(this, "bergey_health_bonus_50_perc_durability").getDouble());
  	    if(maxHealth != ((Damageable) player).getMaxHealth()){
-			debug("Setting Player: "+player.getName()+" to "+maxHealth+" health");
+			log_.log(Level.INFO, "Setting Player: "+player.getName()+" to "+maxHealth+" health");
 			if(((Damageable)player).getHealth()>maxHealth)
 			{
 				player.setHealth(maxHealth);
@@ -306,7 +310,7 @@ public class BergeyPvp extends ABergMod  {
 	public void resetMaxHealth(Player player){
 		double maxHealth = 20.0d;
  	    if(maxHealth != ((Damageable) player).getMaxHealth()){
-			debug("Setting Player: "+player.getName()+" to "+maxHealth+" health");
+ 	    	log_.log(Level.INFO, "Setting Player: "+player.getName()+" to "+maxHealth+" health");
 			if(((Damageable)player).getHealth()>maxHealth)
 			{
 				player.setHealth(maxHealth);
@@ -315,13 +319,12 @@ public class BergeyPvp extends ABergMod  {
  	    }
 	}
     
-    @Bergification(opt="ender_pearl_teleportation", def="false")
+    @NameConfig(name="ender_pearl_teleportation", def="false", type = NameConfigType.Bool)
       @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
       public void onTeleport(PlayerTeleportEvent event) {
         TeleportCause cause = event.getCause();
         if (cause.equals(TeleportCause.ENDER_PEARL) && 
-        	!apis.isBergecraftDisabledFor(event.getPlayer()) && 
-        	!config_.get("ender_pearl_teleportation").getBool()) {
+        	!config_.get(this, "ender_pearl_teleportation").getBool()) {
         	event.setCancelled(true);
         	event.getPlayer().sendMessage("Ender pearls are disabled in Bergecraft PVP mode.");
         }
