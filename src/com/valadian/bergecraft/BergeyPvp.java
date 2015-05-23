@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Damageable;
@@ -23,9 +24,11 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import vg.civcraft.mc.namelayer.NameAPI;
 import vg.civcraft.mc.namelayer.config.NameConfigListener;
@@ -35,15 +38,113 @@ import vg.civcraft.mc.namelayer.config.annotations.NameConfigs;
 import vg.civcraft.mc.namelayer.config.annotations.NameConfigType;
 
 import com.valadian.bergecraft.bergeypvp.WeaponTimer;
+import com.valadian.bergecraft.besterarmor.ArmorData.ArmorType;
+import com.valadian.bergecraft.besterarmor.ExtendedInventorySaver;
+import com.valadian.bergecraft.besterarmor.Listeners.ArmorListener;
+import com.valadian.bergecraft.besterarmor.Listeners.DecloakListener;
+import com.valadian.bergecraft.besterarmor.Listeners.HorseMountListener;
+import com.valadian.bergecraft.besterarmor.Managers.ArmorManager;
+
 public class BergeyPvp extends JavaPlugin implements Listener, NameConfigListener{
 
 	private NameConfigManager config_;
     protected final Logger log_ = getLogger();
+    
+    private static BergeyPvp thisPlugin;
+	
+	private static ArmorManager armorManager;
+	
+	private static ArmorListener armorListener;
+	private static HorseMountListener horseListener;
+	private static DecloakListener decloakListener;
+	
+	private static ExtendedInventorySaver extendedInventoriesSaver;
+	
 	public void onEnable(){
 		getServer().getPluginManager().registerEvents(this, this);
 		config_ = NameAPI.getNameConfigManager();
 		config_.registerListener(this, this);
+		
+		besterArmorInitializationCrap();
+        
+        besterArmorTimedTasks();
 	}
+	
+	public void onDisable() 
+    {
+    	saveInventories();
+    }
+	
+	private void besterArmorInitializationCrap()
+    {
+    	thisPlugin = this;
+        
+        extendedInventoriesSaver = new ExtendedInventorySaver();
+        
+        armorManager = new ArmorManager(extendedInventoriesSaver);
+        
+        armorListener = new ArmorListener();
+        horseListener = new HorseMountListener();
+        decloakListener = new DecloakListener();        
+        
+        establishListeners();
+    }
+    
+    private void establishListeners()
+    {
+    	getServer().getPluginManager().registerEvents(armorListener, thisPlugin);
+    	getServer().getPluginManager().registerEvents(horseListener, thisPlugin);
+    	getServer().getPluginManager().registerEvents(decloakListener, thisPlugin);
+    }
+    
+    private void besterArmorTimedTasks()
+    {
+    	BukkitScheduler scheduler = Bukkit.getServer().getScheduler();
+        scheduler.scheduleSyncRepeatingTask(this, new Runnable() {
+            @Override
+            public void run() 
+            {
+                armorManager.decrimentCoolDown();
+            }
+        }, 0L, 20L);
+        
+        scheduler.scheduleSyncRepeatingTask(this, new Runnable() {
+            @Override
+            public void run() 
+            {                
+                for(Player player : armorManager.getFireProtPlayers())
+                {
+                	armorManager.distributePotionEffects(player);
+                }
+            }
+        }, 0L, 100L);
+    }
+    
+    private void saveInventories()
+    {
+    	for(Player player : Bukkit.getServer().getOnlinePlayers())
+    	{
+    		if(ArmorManager.readArmor(player).getArmorType().equals(ArmorType.GOLD))
+    		{
+    			extendedInventoriesSaver.saveExtendedInventory(player);
+    		}
+    	}
+    }
+    
+    public static ArmorManager getArmorManager()
+    {
+    	return armorManager;
+    }
+    
+    public static ExtendedInventorySaver getExtendedInventorySaver()
+    {
+    	return extendedInventoriesSaver;
+    }
+    
+    public static Plugin getPlugin()
+    {
+    	return thisPlugin;
+    }
 
     HashMap<Player,WeaponTimer> cooldowns = new HashMap<Player,WeaponTimer>();
     
